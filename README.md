@@ -318,7 +318,7 @@ Device Status:     0x0f0c
   
 ```
 
-Interface 1 alt setting 0 describe all video modes see uvc_set_video(uint8_t mode,uint8_t fps) fucntion with these possible options:
+Interface 1 alt setting 0 describe all video modes see uvc_set_video(uint8_t mode,uint8_t fps) function with these possible options:
 
 * mode 0 fps 60(default), 30, 15, 8  video and depth frames 1280x800
 
@@ -331,21 +331,21 @@ device frame format:
 * mode 0  3448x2x808 bytes frame each row:
 	* unknown1 32 bytes 
 	* unknown2 64 bytes 
-	* video 1280*2 
+	* video 1280x2 bytes
 	* depth 1280x2 bytes
-	* unknow3 840*2 bytes
+	* unknow3 840x2 bytes
 * mode 1 1748x2x408 bytes frame each row:
 	* unknown1 32 bytes 
 	* unknown2 64 bytes 
-	* video 1280*2 
+	* video 1280x2 byetes 
 	* depth 1280x2 bytes
-	* unknow3 420*2 bytes
-* mode 2 898x2x200
+	* unknow3 420x2 bytes
+* mode 2 898x2x200 bytes frame each row
 	* unknown1 32 bytes 
 	* unknown2 64 bytes 
 	* video 320x2 bytes 
 	* depth 320x2 bytes
-	* unknown3 210*2 bytes
+	* unknown3 210x2 bytes
 
 ===================
 Supported platforms
