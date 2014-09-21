@@ -48,8 +48,19 @@ PS4EYECam is a USB 3 device and it is using libusb  so it can be ported to all p
 Implemetation reference was done in OSX Mavericks and i only tested it on this platform. 
 
 
+A sample PS4EYECapture with PS4EYECam tested on OSX Maverick is included using:
 
+* [libcinder](https://github.com/cinder/Cinder).
 
+* [ciUI](https://github.com/bigboss-ps3dev/ciUI) With little modification to use in Maverick environment.
+
+* [opencv-cinder](https://github.com/cinder/Cinder-OpenCV) For future use.
+
+Sample output with Cinder in OSX Mavericks:
+
+![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/video.png "PS4EYECapture Running with Cinder mode 0 30 fps")
+
+![alt text](https://raw.github.com/inspirit/PS4EYECam/master/depth.png "PS4EYECapture Running with Cinder mode 0 30 fps")
 
 
 
