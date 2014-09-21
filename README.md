@@ -428,7 +428,7 @@ You will need a few things installed before:
 
 8) Copy driver/include/*.h to your PS4EYECapture/include
 
-9) Copy cinder/resources/firmware.bin to your PS4EYECapture/src
+9) Copy cinder/resources/firmware.bin to your PS4EYECapture/resources
 
 10) Copy /opt/local/inclide/libusb-1.0/libusb.h to your PS4EYECapture/include
 
@@ -446,10 +446,22 @@ TODO LIST
 
 * Identify uknown1, unknown2 and unknown3 formats
 
-* Identify correct format to depth frame. Sample only use threlhold values to displaying results in rgb
+* Identify correct format to depth frame. Sample only use threshold values to display results in rgb
 
-* Port driver to other platform
+* Port driver to other platforms (linux , windows, ...)
 
-* Cinder is only supported by osx and windows. An openframework sample can be done easily and it is multiplatform
+* Cinder is only supported by osx and windows. An openframework sample can be done easily and it is multiplatform 
 
-* Fix, improve , add new features
+* Fix, improve , incorporate new features
+
+* If someone has  ov580 datasheet contact with me please 
+
+
+========
+Contacts
+========
+
+You can follow and contact me on twitter @psxdev
+
+
+
