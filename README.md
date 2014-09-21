@@ -355,6 +355,9 @@ PS4EYECam is a USB 3 device and it is using libusb  so it can be ported to all p
 
 Implemetation reference was done in OSX Mavericks and i only tested it on this platform. 
 
+=============
+OSX Mavericks
+=============
 
 A sample PS4EYECapture with PS4EYECam tested on OSX Maverick is included using:
 
@@ -370,5 +373,71 @@ Sample output with Cinder in OSX Mavericks:
 
 ![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/depth.png "PS4EYECapture Running with Cinder mode 0 30 fps")
 
+You will need a few things installed before:
+
+* xcode
+
+* macport or similar 
+
+* libusb (with macport is installed in /local/opt/lib)
+```
+	$ pwd
+	/opt/local/lib
+	$ ls -l libusb-1.0.*
+	-rwxr-xr-x  1 root  admin  190412 11 sep 22:17 libusb-1.0.0.dylib
+	-rw-r--r--  1 root  admin  244528 11 sep 22:17 libusb-1.0.a
+	lrwxr-xr-x  1 root  admin      18 11 sep 22:17 libusb-1.0.dylib -> libusb-1.0.0.dylib
+```	
+* Compile and install [libcinder](https://github.com/cinder/Cinder) follow [gitsetup](http://libcinder.org/docs/welcome/GitSetup.html).
+
+* Install ciUI and Cinder-OpenCV blocks
+```
+	$ pwd
+	/[YOUR_OWN_PATH]/cinder_master
+	$ cd blocks
+	$ git clone https://github.com/bigboss-ps3dev/ciUI
+	$ git clone https://github.com/cinder/Cinder-OpenCV
+```	
+* Use TinderBox-Mac tool to create a PS4EYECapture project 	/[YOUR_OWN_PATH]/cinder_master/tools/TinderBox-Mac
+
+	1) Choose project name PS4EYECapture , path and choose cinder_master or your repository name and choose next_
+
+![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/tinder0.png "Choose PS4EYECapture name")
+
+	2) Choose ciUI block and option copy
+
+![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/tinder1.png "Mode copy ciUI")
+
+	3) Choose OpenCV block and option relative
+
+![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/tinder2.png "Mode reference opencv")
+
+	4) Choose finish and project is created choose xcode project file and open it
+
+![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/tinder3.png "project created")
+
+![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/tinder4.png "xcode0")
+
+	5) Clone PS4EYECam repository  
+```
+	git clone https://github.com/bigboss-ps3dev/PS4EYECam 
+```
+	6) Copy driver/src/*.cpp to your PS4EYECapture/src
+
+	7) Copy cinder/src/*.cpp to your PS4EYECapture/src
+
+	8) Copy driver/include/*.h to your PS4EYECapture/include
+
+	9) Copy cinder/resources/firmware.bin to your PS4EYECapture/src
+
+	10) Copy /opt/local/inclide/libusb-1.0/libusb.h to your PS4EYECapture/include
+
+	11) Copy /opt/local/lib/libusb-1.0.0.dylib to your cinder_master/lib/macosx/
+
+	12) Incorporate cpp files from driver/src and cinder/src on src, firmware.bin to resources headers files to include and libusb lib.
+
+![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/xcode.png "xcode ready")
+
+	13) Ready to compile and run 
 
 
