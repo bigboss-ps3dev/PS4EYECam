@@ -337,7 +337,7 @@ device frame format:
 * mode 1 1748x2x408 bytes frame each row:
 	* unknown1 32 bytes 
 	* unknown2 64 bytes 
-	* video left 640 byetes 
+	* video left 640x2 bytes 
 	* video right 640x2 bytes
 	* unknown3 420x2 bytes
 * mode 2 898x2x200 bytes frame each row
