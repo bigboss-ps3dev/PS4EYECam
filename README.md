@@ -320,40 +320,41 @@ Device Status:     0x0f0c
 
 Interface 1 alt setting 0 describe all video modes see uvc_set_video(uint8_t mode,uint8_t fps) function with these possible options:
 
-* mode 0 fps 60(default), 30, 15, 8  video and depth frames 1280x800
+* mode 0 fps 60(default), 30, 15, 8  video left and video right frames 1280x800
 
-* mode 1 fps 120(default), 60, 30, 15, 8 video and depth frames 640x400
+* mode 1 fps 120(default), 60, 30, 15, 8 video left and video right frames 640x400
 
-* mode 2 fps 240(default), 120, 60, 30 video and depth frames 320x192
+* mode 2 fps 240(default), 120, 60, 30 video left and video right frames 320x192
 
 device frame format:
 
 * mode 0  3448x2x808 bytes frame each row:
 	* unknown1 32 bytes 
 	* unknown2 64 bytes 
-	* video 1280x2 bytes
-	* depth 1280x2 bytes
-	* unknow3 840x2 bytes
+	* video left 1280x2 bytes
+	* video right 1280x2 bytes
+	* unknown3 840x2 bytes
 * mode 1 1748x2x408 bytes frame each row:
 	* unknown1 32 bytes 
 	* unknown2 64 bytes 
-	* video 1280x2 byetes 
-	* depth 1280x2 bytes
-	* unknow3 420x2 bytes
+	* video left 640 byetes 
+	* video right 640x2 bytes
+	* unknown3 420x2 bytes
 * mode 2 898x2x200 bytes frame each row
 	* unknown1 32 bytes 
 	* unknown2 64 bytes 
-	* video 320x2 bytes 
-	* depth 320x2 bytes
+	* video left 320x2 bytes 
+	* video right 320x2 bytes
 	* unknown3 210x2 bytes
 
 ===================
 Supported platforms
 ===================
 
-PS4EYECam is a USB 3 device and it is using libusb  so it can be ported to all platforms supported by libusb and with USB 3 controllers.
+PS4EYECam is a USB 3 device and it is using libusb so it can be ported to all platforms supported by libusb and with USB 3 controllers.
 
 Implemetation reference was done in OSX Mavericks and i only tested it on this platform. 
+
 
 =============
 OSX Mavericks
@@ -365,13 +366,11 @@ A sample PS4EYECapture with PS4EYECam tested on OSX Maverick is included using:
 
 * [ciUI](https://github.com/bigboss-ps3dev/ciUI) With little modification to use in Mavericks environment.
 
-* [opencv-cinder](https://github.com/cinder/Cinder-OpenCV) For future use.
+* [opencv-cinder](https://github.com/cinder/Cinder-OpenCV) 
 
 Sample output with Cinder in OSX Mavericks:
 
-![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/video.png "PS4EYECapture Running with Cinder mode 0 30 fps")
-
-![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/depth.png "PS4EYECapture Running with Cinder mode 0 30 fps")
+![alt text](https://raw.github.com/bigboss-ps3dev/PS4EYECam/master/video.png "PS4EYECapture Running with Cinder mode 1 120 fps")
 
 You will need a few things installed before:
 
@@ -440,21 +439,29 @@ You will need a few things installed before:
 
 13) Ready to compile and run 
 
+=======
+CHANGES
+=======
+
+* Fixed support for left and right camera
+* Added opencv support with functions to convert from raw YUYV to RGB
+* Added sample capture to show mode 1 640x400 with left and rigth camera enabled at 120 fps 
+
 =========
 TODO LIST
 =========
 
-* Identify uknown1, unknown2 and unknown3 formats
+* Calibration for stereo vision in progress
 
-* Identify correct format to depth frame. Sample only use threshold values to display results in rgb
+* Identify unknown1, unknown2 and unknown3 formats
 
-* Port driver to other platforms (linux , windows, ...)
+* Port driver to other platforms (linux , windows, android...)
 
-* Cinder is only supported by osx and windows. An openframework sample can be done easily and it is multiplatform 
+* Cinder is only supported by osx and windows. An openframework sample can be done easily and it is multiplatform. I can do an extesion capture addons to opencv in the future so it will be easier to port to platform with libusb and opencv support. 
 
 * Fix, improve , incorporate new features
 
-* If someone has  ov580 datasheet contact with me please 
+* If someone has ov580 datasheet contact with me please 
 
 
 ========

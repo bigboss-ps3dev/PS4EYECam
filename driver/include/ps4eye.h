@@ -73,8 +73,8 @@ typedef struct eyeframe
 {
     uint8_t *unknown1;
     uint8_t *unknown2;
-    uint8_t *videoframe;
-    uint8_t *depthframe;
+    uint8_t *videoLeftFrame;
+    uint8_t *videoRightFrame;
     uint8_t *unknown3;
     uint8_t mode; //0 1280x800 1 640x400 2 320x192
 
@@ -90,7 +90,7 @@ namespace ps4eye {
         static const uint16_t VENDOR_ID;
         static const uint16_t PRODUCT_ID;
         std::string  firmware_path;
-        int depthflag;
+        int rightflag;
        
 
 
@@ -122,8 +122,12 @@ namespace ps4eye {
 
         bool isStreaming() const { return is_streaming; }
         bool isNewFrame() const;
-        const uint8_t* getLastVideoFramePointer();
-        const uint8_t* getLastDepthFramePointer();
+        const uint8_t* getLastVideoLeftFramePointer();
+        const uint8_t* getLastVideoRightFramePointer();
+        eyeframe* getLastVideoFramePointer();
+
+      //  const uint8_t* getLastVideoFramePointer();
+        //const uint8_t* getLastDepthFramePointer();
 
 
         uint32_t getWidth() const { return frame_width; }
@@ -137,6 +141,8 @@ namespace ps4eye {
         //don't tested some return pipe error -9 in libusb control transfer
         int uvc_get_hue(int16_t* hue, uint8_t req_code);
         int uvc_set_hue(int16_t hue);
+        int uvc_get_sharpness(uint16_t* sharpness, uint8_t req_code);
+        int uvc_set_sharpness(uint16_t sharpness);
         int uvc_get_brightness(int16_t* brightness, uint8_t req_code);
         int uvc_set_brightness(int16_t hue);
         int uvc_get_contrast(uint16_t* contrast, uint8_t req_code);

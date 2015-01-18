@@ -708,7 +708,7 @@ namespace ps4eye {
 
 
         is_streaming = false;
-        depthflag=0;
+        rightflag=0;
         device_ = device;
         mgrPtr = USBMgr::instance();
         //urb = std::shared_ptr<URBDesc>( new URBDesc() );
@@ -738,8 +738,8 @@ namespace ps4eye {
         if(control_transfer_buffer) free(control_transfer_buffer);
         if(myframe.unknown1)free(myframe.unknown1);
         if(myframe.unknown2)free(myframe.unknown2);
-        if(myframe.videoframe)free(myframe.videoframe);
-        if(myframe.depthframe)free(myframe.depthframe);
+        if(myframe.videoLeftFrame)free(myframe.videoLeftFrame);
+        if(myframe.videoRightFrame)free(myframe.videoRightFrame);
         if(myframe.unknown3)free(myframe.unknown3);
 
     }
@@ -1515,8 +1515,8 @@ namespace ps4eye {
         //default mode 3348*808
         myframe.unknown1=(uint8_t * )malloc(32*800);
         myframe.unknown2=(uint8_t * )malloc(64*800);
-        myframe.videoframe=(uint8_t * )malloc(1280*800*2);
-        myframe.depthframe=(uint8_t * )malloc(1280*800*2);
+        myframe.videoLeftFrame=(uint8_t * )malloc(1280*800*2);
+        myframe.videoRightFrame=(uint8_t * )malloc(1280*800*2);
         myframe.unknown3=(uint8_t * )malloc(840*800*2);
 
 
@@ -1542,13 +1542,13 @@ namespace ps4eye {
         debug("Show video mode registers from sensor 2\n");
         dump_sensor_video_mode(2);*/
 
-
+/*
         if(!init_registers())
         {
             debug("Initialization registers failed\n");
             return false;
         }
-
+*/
         return true;
     }
     bool PS4EYECam::init(uint8_t initmode, uint8_t desiredFrameRate)
@@ -1564,8 +1564,8 @@ namespace ps4eye {
                 mode=initmode;
                 myframe.unknown1=(uint8_t * )malloc(32*800);
                 myframe.unknown2=(uint8_t * )malloc(64*800);
-                myframe.videoframe=(uint8_t * )malloc(1280*800*2);
-                myframe.depthframe=(uint8_t * )malloc(1280*800*2);
+                myframe.videoLeftFrame=(uint8_t * )malloc(1280*800*2);
+                myframe.videoRightFrame=(uint8_t * )malloc(1280*800*2);
                 myframe.unknown3=(uint8_t * )malloc(840*800*2);
                 myframe.mode=0;
                 frame_stride=3448*2;
@@ -1579,11 +1579,11 @@ namespace ps4eye {
                 frame_height=400;
                 frame_rate=desiredFrameRate;
                 mode=initmode;
-                myframe.unknown1=(uint8_t * )malloc(32*800);
-                myframe.unknown2=(uint8_t * )malloc(64*800);
-                myframe.videoframe=(uint8_t * )malloc(640*800*2);
-                myframe.depthframe=(uint8_t * )malloc(640*800*2);
-                myframe.unknown3=(uint8_t * )malloc(420*800*2);
+                myframe.unknown1=(uint8_t * )malloc(32*400);
+                myframe.unknown2=(uint8_t * )malloc(64*400);
+                myframe.videoLeftFrame=(uint8_t * )malloc(640*400*2);
+                myframe.videoRightFrame=(uint8_t * )malloc(640*400*2);
+                myframe.unknown3=(uint8_t * )malloc(420*400*2);
                 myframe.mode=1;
                 frame_stride=1748*2;
                 linesize=1748;
@@ -1596,11 +1596,11 @@ namespace ps4eye {
                 frame_height=192;
                 frame_rate=desiredFrameRate;
                 mode=initmode;
-                myframe.unknown1=(uint8_t * )malloc(32*800);
-                myframe.unknown2=(uint8_t * )malloc(64*800);
-                myframe.videoframe=(uint8_t * )malloc(320*800*2);
-                myframe.depthframe=(uint8_t * )malloc(320*800*2);
-                myframe.unknown3=(uint8_t * )malloc(210*800*2);
+                myframe.unknown1=(uint8_t * )malloc(32*200);
+                myframe.unknown2=(uint8_t * )malloc(64*200);
+                myframe.videoLeftFrame=(uint8_t * )malloc(320*200*2);
+                myframe.videoRightFrame=(uint8_t * )malloc(320*200*2);
+                myframe.unknown3=(uint8_t * )malloc(210*200*2);
                 myframe.mode=2;
                 frame_stride=898*2;
                 linesize=898;
@@ -1613,8 +1613,8 @@ namespace ps4eye {
                 mode=0;
                 myframe.unknown1=(uint8_t * )malloc(32*800);
                 myframe.unknown2=(uint8_t * )malloc(64*800);
-                myframe.videoframe=(uint8_t * )malloc(1280*800*2);
-                myframe.depthframe=(uint8_t * )malloc(1280*800*2);
+                myframe.videoLeftFrame=(uint8_t * )malloc(1280*800*2);
+                myframe.videoRightFrame=(uint8_t * )malloc(1280*800*2);
                 myframe.unknown3=(uint8_t * )malloc(840*800*2);
                 myframe.mode=0;
                 frame_stride=3448*2;
@@ -1772,54 +1772,59 @@ namespace ps4eye {
         }
         return false;
     }
-
-    const uint8_t* PS4EYECam::getLastDepthFramePointer()
+    eyeframe * PS4EYECam::getLastVideoFramePointer()
     {
 
         int i;
         last_qued_frame_time = urb->last_frame_time;
 
         uint8_t *rowpointer;
-        //rowpointer=(urb->frame_buffer+ urb->frame_complete_ind * urb->frame_size);
         rowpointer=&(urb->frame_buffer[urb->frame_complete_ind * urb->frame_size]);
-
-        //uint32_t linesize=3448;
-        //uint32_t linesize=1748;
-
-
-        //better almost 60 fps with memcpy
-     //   for(i=0;i<800;i++)
 
         for(i=0;i<frame_height;i++)
         {
-            // memcpy(&myframe.unknown1[32*i],&rowpointer[linesize*2*i], 32);
-            //memcpy(&myframe.unknown2[64*i],&rowpointer[linesize*2*i+32], 64);
-
-            //memcpy(&myframe.videoframe[1280*2*i],&rowpointer[linesize*2*i+32+64], 1280*2);
-            //  std:reverse_copy(&rowpointer[linesize*2*i+32+64+1280*2], &rowpointer[linesize*2*i+32+64+1280*2]+1280*2-1, &myframe.depthframe[1280*2*i]);
-        //1280    memcpy(&myframe.depthframe[1280*2*i],&rowpointer[linesize*2*i+32+64+1280*2], 1280*2);
-            memcpy(&myframe.depthframe[frame_width*2*i],&rowpointer[linesize*2*i+32+64+frame_width*2], frame_width*2);
-
-
-            // memcpy(&myframe.unknown3[840*2*i],&rowpointer[linesize*2*i+32+64+1280*2+1280*2], 840*2);
+            memcpy(&myframe.videoLeftFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64], frame_width*2);
+            memcpy(&myframe.videoRightFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64+frame_width*2], frame_width*2);
 
         }
+        return &myframe;
+        
+    }
 
-        //ugly loss almost 30 fps with this
-        /*for(i=0;i<800;i++)
-         {
-         rowpointeraux=rowpointer+linesize*i*2+32+64+1280*2*depthflag;
-         for(j=0;j<1280;j++)
-         {
-         frame[1280*2*i+2*j]=rowpointeraux[2*j];
-         frame[1280*2*i+2*j+1]=rowpointeraux[2*j+1];
-         }
-         }
-         return frame;*/
-        return myframe.depthframe;
+    const uint8_t* PS4EYECam::getLastVideoLeftFramePointer()
+    {
+
+        int i;
+        last_qued_frame_time = urb->last_frame_time;
+
+        uint8_t *rowpointer;
+        rowpointer=&(urb->frame_buffer[urb->frame_complete_ind * urb->frame_size]);
+
+        for(i=0;i<frame_height;i++)
+        {
+            memcpy(&myframe.videoLeftFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64], frame_width*2);
+        }
+        return myframe.videoLeftFrame;
+        
+    }
+
+    const uint8_t* PS4EYECam::getLastVideoRightFramePointer()
+    {
+        int i;
+        last_qued_frame_time = urb->last_frame_time;
+
+        uint8_t *rowpointer;
+        rowpointer=&(urb->frame_buffer[urb->frame_complete_ind * urb->frame_size]);
+
+        for(i=0;i<frame_height;i++)
+        {
+             memcpy(&myframe.videoRightFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64+frame_width*2], frame_width*2);
+        }
+
+        return myframe.videoRightFrame;
 
     }
-    const uint8_t* PS4EYECam::getLastVideoFramePointer()
+  /*  const uint8_t* PS4EYECam::getLastVideoFramePointer()
     {
 
         int i;
@@ -1839,7 +1844,7 @@ namespace ps4eye {
             //memcpy(&myframe.unknown2[64*i],&rowpointer[linesize*2*i+32], 64);
 
          //   memcpy(&myframe.videoframe[1280*2*i],&rowpointer[linesize*2*i+32+64], 1280*2);
-            memcpy(&myframe.videoframe[frame_width*2*i],&rowpointer[linesize*2*i+32+64], frame_width*2);
+            memcpy(&myframe.videoLeftFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64], frame_width*2);
 
 
             // memcpy(&myframe.depthframe[1280*2*i],&rowpointer[linesize*2*i+32+64+1280*2], 1280*2);
@@ -1848,7 +1853,7 @@ namespace ps4eye {
         }
 
         //ugly loss almost 30 fps with this
-        /*for(i=0;i<800;i++)
+        //or(i=0;i<800;i++)
          {
          rowpointeraux=rowpointer+linesize*i*2+32+64+1280*2*depthflag;
          for(j=0;j<1280;j++)
@@ -1857,10 +1862,10 @@ namespace ps4eye {
          frame[1280*2*i+2*j+1]=rowpointeraux[2*j+1];
          }
          }
-         return frame;*/
-        return myframe.videoframe;
+         return frame;
+      //  return myframe.videoLeftFrame;
         
-    }
+    //}
     /*
      * dump fuctions from lsusb.c only for debug purposes to check if values are the same in
      * usb sniffer capture
@@ -2064,6 +2069,48 @@ namespace ps4eye {
                                       sizeof(data),
                                       0);
 
+        if (ret == sizeof(data))
+            return 0;
+        else
+            return ret;
+    }
+    int PS4EYECam::uvc_get_sharpness(uint16_t* sharpness, uint8_t req_code) {
+        uint8_t data[2];
+        int ret;
+
+        ret = libusb_control_transfer(
+                                      handle_,
+                                      REQ_TYPE_GET, req_code,
+                                      UVC_PU_SHARPNESS_CONTROL << 8,
+                                      1 << 8,
+                                      data,
+                                      sizeof(data),
+                                      0);
+
+
+
+        if (ret == sizeof(data)) {
+            *sharpness = SW_TO_SHORT(data + 0);
+            return 0;
+        } else {
+            return ret;
+        }
+    }
+    int PS4EYECam::uvc_set_sharpness(uint16_t sharpness) {
+        uint8_t data[2];
+        int ret;
+
+        SHORT_TO_SW(sharpness, data + 0);
+
+        ret = libusb_control_transfer(
+                                      handle_,
+                                      REQ_TYPE_SET, UVC_SET_CUR,
+                                      UVC_PU_SHARPNESS_CONTROL << 8,
+                                      1 << 8,
+                                      data,
+                                      sizeof(data),
+                                      0);
+        
         if (ret == sizeof(data))
             return 0;
         else
@@ -2601,9 +2648,17 @@ namespace ps4eye {
         uvc_show_video_mode();
         uvc_set_video_mode(mode,frame_rate);
         uvc_show_video_mode();
+      /*  uint16_t brightness;
+        int sal;
+        sal=uvc_get_sharpness(&brightness, UVC_GET_CUR);
+        cout << sal << "Current brightness " << brightness<< endl;
+        sal=uvc_get_sharpness(&brightness, UVC_GET_MIN);
+        cout << sal << "Min brightness " << brightness<< endl;
 
 
-
+        sal=uvc_get_sharpness(&brightness, UVC_GET_MAX);
+        cout << sal << "Max brightness " << brightness<< endl;
+        set_led_on();*/
 
         usleep(1000);
 

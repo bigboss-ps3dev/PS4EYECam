@@ -100,14 +100,16 @@ public:
 	bool mShouldQuit;
 	std::thread mThread;
 
-	gl::Texture mTexture;
+	gl::Texture mTextureLeft;
 
-    gl::Texture depthtexture;
+    gl::Texture mTextureRight;
 
-	uint8_t *frame_bgra;
-    uint8_t *frame_bgr;
-	Surface mFrame;
-    Surface mFramedepth;
+
+	uint8_t *frame_rgb_left;
+    uint8_t *frame_rgb_right;
+	Surface mFrameLeft;
+    Surface mFrameRight;
+
 
 
 	// mesure cam fps
@@ -120,6 +122,39 @@ public:
     int mDepthThreshold2;
 
 };
+void convert_opencv_to_RGBA(uint8_t *in,uint8_t *out, int size_x,int size_y)
+{
+
+    cv::Mat yuv(size_y,size_x,CV_8UC2 ,in);
+    cv::Mat rgb(size_y,size_x,CV_8UC4, out);
+
+    cv::cvtColor(yuv, rgb, CV_YUV2RGBA_YUY2);
+
+
+}
+void convert_opencv_to_RGB(uint8_t *in,uint8_t *out, int size_x,int size_y)
+{
+
+    cv::Mat yuv(size_y,size_x,CV_8UC2 ,in);
+    cv::Mat rgb(size_y,size_x,CV_8UC3, out);
+
+    cv::cvtColor(yuv, rgb, CV_YUV2RGB_YUY2);
+
+    
+}
+
+void convert_opencv_to_GRAY(uint8_t *in,uint8_t *out, int size_x,int size_y)
+{
+
+    cv::Mat rgb(size_y,size_x,CV_8UC3 ,in);
+    cv::Mat gray(size_y,size_x,CV_8UC1, out);
+
+    cv::cvtColor(rgb, gray, CV_RGB2GRAY);
+
+
+}
+
+
 void convert_depth_to_RGBA( const uint8_t *in,uint8_t *rgb, int size_x,int size_y,int low,int high)
 {
     int i,j;
@@ -288,9 +323,11 @@ void convert_YUYV_to_RGB24(const uint8_t  *yuyv,  uint8_t *rgb,int size_x, int s
     }
 }
 void PS4EYECaptureApp::prepareSettings( Settings *settings ){
+    //for mode 1
     settings->setWindowSize( 1280, 800 );
-    //settings->setFrameRate( 60.0f );
-    settings->setFrameRate( 240.0f );
+
+   // settings->setFrameRate( 120.0f );
+    settings->setFrameRate( 540.0f );
     settings->setBorderless();
 
 }
@@ -299,7 +336,6 @@ void PS4EYECaptureApp::setup()
     using namespace ps4eye;
 
     mShouldQuit = false;
-
 
     // list out the devices
     std::vector<PS4EYECam::PS4EYERef> devices( PS4EYECam::getDevices() );
@@ -311,8 +347,9 @@ void PS4EYECaptureApp::setup()
     mCamFpsLastSampleFrame = 0;
     mCamFpsLastSampleTime = 0;
 
-
+    //mode 1
     gui = new ciUICanvas(0,0,1280, 800);
+
     float gh = 15;
     float slw = 340 - 20;
     gl::disableVerticalSync();
@@ -326,7 +363,7 @@ void PS4EYECaptureApp::setup()
         //mode 0: 60,30,15,8 fps 1280x800
         //mode 1: 120,60,30,15,8 fps 640x400
         //mode 2: 240,120,60,30 fps 320x192
-        if(!(eye->init(0, 30)))
+        if(!(eye->init(1, 120)))
         {
             cout << "init failed" << std::endl;
             //don't use when you are debugging is fine.
@@ -340,20 +377,24 @@ void PS4EYECaptureApp::setup()
         mDepthThreshold1=35000;
         mDepthThreshold2=36000;
 
-        frame_bgra = new uint8_t[eye->getWidth()*eye->getHeight()*4];
-        frame_bgr = new uint8_t[eye->getWidth()*eye->getHeight()*3];
+        frame_rgb_left = new uint8_t[eye->getWidth()*eye->getHeight()*3];
+        frame_rgb_right = new uint8_t[eye->getWidth()*eye->getHeight()*3];
 
-		mFrame = Surface(frame_bgra, eye->getWidth(), eye->getHeight(), eye->getWidth()*4,SurfaceChannelOrder::RGBA);
-        memset(frame_bgra, 0, eye->getWidth()*eye->getHeight()*4);
+		mFrameLeft = Surface(frame_rgb_left, eye->getWidth(), eye->getHeight(), eye->getWidth()*3,SurfaceChannelOrder::RGB);
+        memset(frame_rgb_left, 0, eye->getWidth()*eye->getHeight()*3);
 
-        mFramedepth = Surface(frame_bgr, eye->getWidth(), eye->getHeight(), eye->getWidth()*3,SurfaceChannelOrder::BGR);
-        memset(frame_bgr, 0, eye->getWidth()*eye->getHeight()*3);
+        mFrameRight = Surface(frame_rgb_right, eye->getWidth(), eye->getHeight(), eye->getWidth()*3,SurfaceChannelOrder::RGB);
+        memset(frame_rgb_right, 0, eye->getWidth()*eye->getHeight()*3);
+
+
+
+
 
 
 		// create and launch the thread
 		mThread = thread( bind( &PS4EYECaptureApp::eyeUpdateThreadFn, this ) );
 
-        gui->addWidgetDown(new ciUILabel("PS4EYE", CI_UI_FONT_MEDIUM));
+        gui->addWidgetDown(new ciUILabel("PS4EYECAM", CI_UI_FONT_MEDIUM));
 
         eyeFpsLab = new eyeFPS(CI_UI_FONT_MEDIUM);
         gui->addWidgetRight(eyeFpsLab);
@@ -362,11 +403,11 @@ void PS4EYECaptureApp::setup()
        // gui->addWidgetDown(new ciUIToggle(gh, gh, false, "set led on"));
         //gui->addWidgetDown(new ciUIToggle(gh, gh, false, "reset sensor"));
         gui->addWidgetDown(new ciUIToggle(gh, gh, false, "stop stream"));
-        gui->addWidgetRight(new ciUIToggle(gh, gh, false, "show depth stream"));
-        gui->addWidgetDown(new ciUISlider(slw, gh, 0, 100000, mDepthThreshold1, "mDepthThreshold1"));
-        gui->addWidgetDown(new ciUISlider(slw, gh, 0, 100000, mDepthThreshold2, "mDepthThreshold2"));
+        gui->addWidgetRight(new ciUIToggle(gh, gh, false, "show right camera"));
+       // gui->addWidgetDown(new ciUISlider(slw, gh, 0, 100000, mDepthThreshold1, "mDepthThreshold1"));
+        //gui->addWidgetDown(new ciUISlider(slw, gh, 0, 100000, mDepthThreshold2, "mDepthThreshold2"));
 
-
+        //gui->addWidgetDown(new ciUISlider(slw, gh, 0, 255, eye->getBrightness(), "brightness"));
 
 
         /*gui->addWidgetDown(new ciUISlider(slw, gh, 0, 63, eye->getGain(), "gain"));
@@ -408,24 +449,24 @@ void PS4EYECaptureApp::guiEvent(ciUIEvent *event)
         }
 
     }
-    else if(name == "show depth stream")
+    else if(name == "show right camera")
     {
         ciUIToggle *t = (ciUIToggle * ) event->widget;
         //eye->setAutogain(t->getValue());
         if(t->getValue())
         {
-            cout << "show depth stream enabled" << std::endl;
-            eye->depthflag=1;
+            cout << "show right camera enabled" << std::endl;
+            eye->rightflag=1;
         }
         else
         {
-            cout << "show depth stream disabled" << std::endl;
-            eye->depthflag=0;
+            cout << "show right camera disabled" << std::endl;
+            eye->rightflag=0;
         }
         
 
     }
-    else if(name == "mDepthThreshold1")
+  /*  else if(name == "mDepthThreshold1")
     {
         ciUISlider *s = (ciUISlider *) event->widget;
         mDepthThreshold1=(static_cast<float>(s->getScaledValue()));
@@ -433,7 +474,7 @@ void PS4EYECaptureApp::guiEvent(ciUIEvent *event)
     {
         ciUISlider *s = (ciUISlider *) event->widget;
         mDepthThreshold2=(static_cast<float>(s->getScaledValue()));
-    }
+    }*/
 
 }
 
@@ -457,7 +498,9 @@ void PS4EYECaptureApp::shutdown()
     eye->shutdown();
 
     //
-	delete[] frame_bgra;
+	delete[] frame_rgb_left;
+    delete[] frame_rgb_right;
+
 	delete gui;
 }
 void PS4EYECaptureApp::mouseDown( MouseEvent event )
@@ -473,6 +516,7 @@ void PS4EYECaptureApp::keyDown( KeyEvent event )
 }
 void PS4EYECaptureApp::update()
 {
+    eyeframe *frame;
 
     if(eye)
     {
@@ -480,25 +524,46 @@ void PS4EYECaptureApp::update()
         if(isNewFrame)
         {
             eye->check_ff71();
+            frame=eye->getLastVideoFramePointer();
             
-            if(eye->depthflag)
+            if(eye->rightflag)
             {
-                convert_depth_to_RGBA(eye->getLastDepthFramePointer(),frame_bgr,eye->getWidth(),eye->getHeight(),mDepthThreshold1,mDepthThreshold2);
+                //convert_depth_to_RGBA(eye->getLastDepthFramePointer(),frame_bgr,eye->getWidth(),eye->getHeight(),mDepthThreshold1,mDepthThreshold2);
+               // convert_YUYV_to_RGB24(eye->getLastDepthFramePointer(),frame_bgra,eye->getWidth(), eye->getHeight());
+                
+
+          //      convert_opencv_to_RGBA((uint8 *)eye->getLastDepthFramePointer(), frame_bgra, eye->getWidth(), eye->getHeight());
+
+            //    convert_opencv_to_RGB((uint8 *)eye->getLastVideoRightFramePointer(), frame_bgr, eye->getWidth(), eye->getHeight());
+
+                convert_opencv_to_RGB(frame->videoRightFrame, frame_rgb_right, eye->getWidth(), eye->getHeight());
+                
+                
 
 
 
-                depthtexture = gl::Texture( mFramedepth );
+               mTextureRight = gl::Texture( mFrameRight );
+
+               // depthtexture = gl::Texture( mFrame );
+
 
 
             }
-            else
-            {
-                convert_YUYV_to_RGB24(eye->getLastVideoFramePointer(),frame_bgra,eye->getWidth(), eye->getHeight());
+            //else
+            //{
+               // convert_YUYV_to_RGB24(eye->getLastVideoFramePointer(),frame_bgra,eye->getWidth(), eye->getHeight());
+
+        //        convert_opencv_to_RGBA((uint8 *)eye->getLastVideoFramePointer(), frame_bgra, eye->getWidth(), eye->getHeight());
+            //    convert_opencv_to_RGB((uint8 *)eye->getLastVideoLeftFramePointer(), frame_bgr, eye->getWidth(), eye->getHeight());
+                convert_opencv_to_RGB(frame->videoLeftFrame, frame_rgb_left, eye->getWidth(), eye->getHeight());
+                
 
 
-                mTexture = gl::Texture( mFrame );
+               // mTexture = gl::Texture( mFrame );
+                mTextureLeft = gl::Texture( mFrameLeft );
 
-            }
+
+            //}
         }
         mCamFrameCount += isNewFrame ? 1 : 0;
         double now = mTimer.getSeconds();
@@ -524,22 +589,20 @@ void PS4EYECaptureApp::draw()
     gl::enableAlphaBlending();
     
     gl::setMatricesWindow( getWindowWidth(), getWindowHeight() );
-    if( !eye->depthflag )
-    {
-        if(mTexture)
+    //if( !eye->rightflag )
+    //{
+        if(mTextureLeft)
         {
         glPushMatrix();
-        gl::draw( mTexture );
-        glPopMatrix();
-        }
+        gl::draw( mTextureLeft );
+
     }
-    else
+    if(eye->rightflag)
     {
-        if(depthtexture)
+        if(mTextureRight)
         {
             glPushMatrix();
-            gl::draw( depthtexture );
-
+            gl::draw(mTextureRight, Rectf(eye->getWidth(),0,eye->getWidth()*2,eye->getHeight()));
             glPopMatrix();
         }
 
