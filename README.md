@@ -329,23 +329,23 @@ Interface 1 alt setting 0 describe all video modes see uvc_set_video(uint8_t mod
 device frame format:
 
 * mode 0  3448x2x808 bytes frame each row:
-	* unknown1 32 bytes 
-	* unknown2 64 bytes 
+	* header 32 bytes 
+	* audio 64 bytes 
 	* video left 1280x2 bytes
 	* video right 1280x2 bytes
-	* unknown3 840x2 bytes
+	* video interleave 840x2 bytes
 * mode 1 1748x2x408 bytes frame each row:
-	* unknown1 32 bytes 
-	* unknown2 64 bytes 
+	* header 32 bytes 
+	* audio 64 bytes 
 	* video left 640x2 bytes 
 	* video right 640x2 bytes
-	* unknown3 420x2 bytes
+	* video interleave 420x2 bytes
 * mode 2 898x2x200 bytes frame each row
-	* unknown1 32 bytes 
-	* unknown2 64 bytes 
+	* header 32 bytes 
+	* audio 64 bytes 
 	* video left 320x2 bytes 
 	* video right 320x2 bytes
-	* unknown3 210x2 bytes
+	* video interleave 210x2 bytes
 
 ===================
 Supported platforms
@@ -439,6 +439,13 @@ You will need a few things installed before:
 
 13) Ready to compile and run 
 
+
+Openframeworks ugly sample:
+1) Create xcode empty PS4EYECapture project you can add opencv addons but it is very old and you can't use opencv conversion from it.
+2) Import files included on openframeworks folder
+3) Add libusb lib to the project
+4) Remember 32 bits only
+
 =======
 CHANGES
 =======
@@ -446,6 +453,9 @@ CHANGES
 * Fixed support for left and right camera
 * Added opencv support with functions to convert from raw YUYV to RGB
 * Added sample capture to show mode 1 640x400 with left and rigth camera enabled at 120 fps 
+* Added ugly support for openframework. Problems with openframeworks: opencv included in it is veryyyyy old , you wiil need opencv 2.4.9 to use CV_YUV2RGB_YUY2 conversion. Added a conversion method without opencv. Are you kidding? It supports 32 bits only. Personal experience it is a really pain in the ass compiling openframeworks with xcode 6.x. I will not give support to it until i see a 64 bit and updated opencv version on it.
+* Identified unknown1, unknown2 and unknown3 formats
+
 
 =========
 TODO LIST
@@ -453,11 +463,7 @@ TODO LIST
 
 * Calibration for stereo vision in progress
 
-* Identify unknown1, unknown2 and unknown3 formats
-
-* Port driver to other platforms (linux , windows, android...)
-
-* Cinder is only supported by osx and windows. An openframework sample can be done easily and it is multiplatform. I can do an extesion capture addons to opencv in the future so it will be easier to port to platform with libusb and opencv support. 
+* Port driver to other platforms (linux , windows, android, oculus, unity3d...)
 
 * Fix, improve , incorporate new features
 
