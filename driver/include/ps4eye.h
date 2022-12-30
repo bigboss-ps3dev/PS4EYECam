@@ -37,7 +37,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
-#include "CinderOpenCV.h"
+#include <string>
 
 // define shared_ptr in std
 

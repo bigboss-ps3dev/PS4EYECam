@@ -48,6 +48,9 @@
 #endif
 #endif
 
+#include <unistd.h>
+#include <string.h>
+
 #define CHUNK_SIZE 512
 
 using namespace std;
@@ -170,8 +173,12 @@ namespace ps4eye {
         LARGE_INTEGER counter;
         QueryPerformanceCounter( &counter );
         return (int64_t)counter.QuadPart;
-#else
+#elif defined(__MACH__)
         return (int64_t)mach_absolute_time();
+#else
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+        return (ts.tv_sec) * 1000000 + (ts.tv_nsec) / 1000;
 #endif
     }
 
@@ -181,7 +188,7 @@ namespace ps4eye {
         LARGE_INTEGER freq;
         QueryPerformanceFrequency(&freq);
         return (double)freq.QuadPart;
-#else
+#elif defined(__MACH__)
         static double freq = 0;
         if( freq == 0 )
         {
@@ -190,6 +197,8 @@ namespace ps4eye {
             freq = sTimebaseInfo.denom*1e9/sTimebaseInfo.numer;
         }
         return freq;
+#else
+        return 1000000;
 #endif
     }
     //
@@ -245,7 +254,7 @@ namespace ps4eye {
     USBMgr::USBMgr()
     {
         libusb_init(&usb_context);
-        libusb_set_debug(usb_context, 3);
+        libusb_set_option(usb_context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
     }
 
     USBMgr::~USBMgr()
@@ -315,7 +324,7 @@ namespace ps4eye {
     class URBDesc
     {
     public:
-        URBDesc(uint8 mode):num_transfers(0), last_packet_type(DISCARD_PACKET), last_pts(0), last_fid(0)
+        URBDesc(uint8_t mode):num_transfers(0), last_packet_type(DISCARD_PACKET), last_pts(0), last_fid(0)
         {
             is_streaming=false;
 
@@ -604,7 +613,7 @@ namespace ps4eye {
         uint8_t frame_work_ind;
         uint32_t frame_counter;
         int8_t ff71status;
-        Boolean is_streaming;
+        bool is_streaming;
         double last_frame_time;
     };
 
@@ -2801,7 +2810,7 @@ namespace ps4eye {
             }
             else
             {
-                cout << "Unable to open firmware.bin!" << endl;
+                cout << "Unable to open firmware file: '" << firmware_path << "'" << endl;
             }
             exit(0);
         }
