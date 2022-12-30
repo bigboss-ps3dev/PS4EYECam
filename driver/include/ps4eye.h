@@ -37,7 +37,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
-#include "CinderOpenCV.h"
+#include <string>
 
 // define shared_ptr in std
 
@@ -66,7 +66,7 @@ namespace std {
 #if defined(DEBUG)
 #define debug(x...) fprintf(stdout,x)
 #else
-#define debug(x...)
+#define debug(x...) while (false)
 #endif
 
 typedef struct eyeframe

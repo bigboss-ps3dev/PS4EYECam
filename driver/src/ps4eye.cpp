@@ -48,6 +48,9 @@
 #endif
 #endif
 
+#include <unistd.h>
+#include <string.h>
+
 #define CHUNK_SIZE 512
 
 using namespace std;
@@ -170,8 +173,12 @@ namespace ps4eye {
         LARGE_INTEGER counter;
         QueryPerformanceCounter( &counter );
         return (int64_t)counter.QuadPart;
-#else
+#elif defined(__MACH__)
         return (int64_t)mach_absolute_time();
+#else
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+        return (ts.tv_sec) * 1000000 + (ts.tv_nsec) / 1000;
 #endif
     }
 
@@ -181,7 +188,7 @@ namespace ps4eye {
         LARGE_INTEGER freq;
         QueryPerformanceFrequency(&freq);
         return (double)freq.QuadPart;
-#else
+#elif defined(__MACH__)
         static double freq = 0;
         if( freq == 0 )
         {
@@ -190,6 +197,8 @@ namespace ps4eye {
             freq = sTimebaseInfo.denom*1e9/sTimebaseInfo.numer;
         }
         return freq;
+#else
+        return 1000000;
 #endif
     }
     //
@@ -245,7 +254,7 @@ namespace ps4eye {
     USBMgr::USBMgr()
     {
         libusb_init(&usb_context);
-        libusb_set_debug(usb_context, 3);
+        libusb_set_option(usb_context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
     }
 
     USBMgr::~USBMgr()
@@ -315,7 +324,7 @@ namespace ps4eye {
     class URBDesc
     {
     public:
-        URBDesc(uint8 mode):num_transfers(0), last_packet_type(DISCARD_PACKET), last_pts(0), last_fid(0)
+        URBDesc(uint8_t mode):num_transfers(0), last_packet_type(DISCARD_PACKET), last_pts(0), last_fid(0)
         {
             is_streaming=false;
 
@@ -471,6 +480,10 @@ namespace ps4eye {
             {
                 switch(last_packet_type)
                 {
+                    case FIRST_PACKET:
+                    case INTER_PACKET:
+                        // OUCH?
+                        return;
                     case DISCARD_PACKET:
                         if (packet_type == LAST_PACKET) {
                             last_packet_type = packet_type;
@@ -604,7 +617,7 @@ namespace ps4eye {
         uint8_t frame_work_ind;
         uint32_t frame_counter;
         int8_t ff71status;
-        Boolean is_streaming;
+        bool is_streaming;
         double last_frame_time;
     };
 
@@ -889,7 +902,7 @@ namespace ps4eye {
         while(start<=finish)
         {
             val=register_read(start,subaddr);
-            if(val>=0)
+            if((val & 0x80) == 0)
             {
                 debug("READ register 0x%04x: 0x%02x\n ",start,val);
             }
@@ -916,7 +929,7 @@ namespace ps4eye {
         for(i=0;i<len;i++)
         {
             val=register_read(data[i],subaddr);
-            if(val>=0)
+            if((val & 0x80) == 0)
             {
                 debug("READ register 0x%04x: 0x%02x\n ",data[i],val);
             }
@@ -1775,13 +1788,12 @@ namespace ps4eye {
     eyeframe * PS4EYECam::getLastVideoFramePointer()
     {
 
-        int i;
         last_qued_frame_time = urb->last_frame_time;
 
         uint8_t *rowpointer;
         rowpointer=&(urb->frame_buffer[urb->frame_complete_ind * urb->frame_size]);
 
-        for(i=0;i<frame_height;i++)
+        for(uint32_t i=0;i<frame_height;i++)
         {
             memcpy(&myframe.videoLeftFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64], frame_width*2);
             memcpy(&myframe.videoRightFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64+frame_width*2], frame_width*2);
@@ -1794,13 +1806,12 @@ namespace ps4eye {
     const uint8_t* PS4EYECam::getLastVideoLeftFramePointer()
     {
 
-        int i;
         last_qued_frame_time = urb->last_frame_time;
 
         uint8_t *rowpointer;
         rowpointer=&(urb->frame_buffer[urb->frame_complete_ind * urb->frame_size]);
 
-        for(i=0;i<frame_height;i++)
+        for(uint32_t i=0;i<frame_height;i++)
         {
             memcpy(&myframe.videoLeftFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64], frame_width*2);
         }
@@ -1810,13 +1821,12 @@ namespace ps4eye {
 
     const uint8_t* PS4EYECam::getLastVideoRightFramePointer()
     {
-        int i;
         last_qued_frame_time = urb->last_frame_time;
 
         uint8_t *rowpointer;
         rowpointer=&(urb->frame_buffer[urb->frame_complete_ind * urb->frame_size]);
 
-        for(i=0;i<frame_height;i++)
+        for(uint32_t i=0;i<frame_height;i++)
         {
              memcpy(&myframe.videoRightFrame[frame_width*2*i],&rowpointer[linesize*2*i+32+64+frame_width*2], frame_width*2);
         }
@@ -1866,7 +1876,6 @@ namespace ps4eye {
       //  return myframe.videoLeftFrame;
         
     //}
-    /*
      * dump fuctions from lsusb.c only for debug purposes to check if values are the same in
      * usb sniffer capture
      */
@@ -2368,6 +2377,7 @@ namespace ps4eye {
    	int PS4EYECam::uvc_set_video_mode(uint8_t mode,uint8_t fps)
 	{
 		uvc_stream_ctrl_t ctrl;
+                memset(&ctrl, 0, sizeof(ctrl));
 	    uint8_t buf[26];
 	    size_t len=26;
 		int err;
@@ -2541,7 +2551,7 @@ namespace ps4eye {
                                       (0x01 << 8) ,
                                       ctrl.bInterfaceNumber,
                                       buf, len, 0);
-        if (err == len)
+        if ((size_t)err == len)
         {
             debug("control transfer for video set return %d\n",err);
             return 0;
@@ -2568,7 +2578,7 @@ namespace ps4eye {
                                       1,
                                       buf, len, 0
                                       );
-        if (err == len)
+        if ((size_t)err == len)
         {
             debug("control transfer for video get return %d\n",err);
             ctrl.bmHint = SW_TO_SHORT(buf);
@@ -2716,7 +2726,7 @@ namespace ps4eye {
             debug("Control transfer error: %s\n", controlTransferStatus(transfer->status) );
             cam->controlTransferError = true;
         }
-        if (cam->control_wLength != transfer->actual_length) {
+        if (cam->control_wLength != (uint32_t)transfer->actual_length) {
             debug("phase 2 read failed received %d bytes instead of %d\n",transfer->actual_length ,cam->control_wLength);
             cam->controlTransferError = true;
         }
@@ -2801,7 +2811,7 @@ namespace ps4eye {
             }
             else
             {
-                cout << "Unable to open firmware.bin!" << endl;
+                cout << "Unable to open firmware file: '" << firmware_path << "'" << endl;
             }
             exit(0);
         }
